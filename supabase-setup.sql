@@ -3,3 +3,5 @@ create table if not exists public.pitchflow_state (
   state jsonb not null,
   updated_at timestamptz not null default now()
 );
+
+alter table public.pitchflow_state enable row level security;
