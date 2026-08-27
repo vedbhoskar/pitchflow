@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { completePitch, createInitialState, moveToAttention, restoreFromAttention, startPitch, viewModel } from "../src/queue.js";
+import { completePitch, createInitialState, makeReady, moveToAttention, restoreFromAttention, startPitch, viewModel } from "../src/queue.js";
 
 const teams = [{ number: "01", name: "Alpha" }, { number: "02", name: "Beta" }, { number: "03", name: "Gamma" }, { number: "04", name: "Nova" }];
 
@@ -31,4 +31,11 @@ test("a skipped team moves to attention and can be restored", () => {
   assert.equal(skipped.teams[1].status, "attention");
   const restored = restoreFromAttention(skipped, initial.teams[1].id);
   assert.equal(restored.teams.find((team) => team.name === "Beta").status, "waiting");
+});
+
+test("an admin can manually make any waiting team the ready team", () => {
+  const initial = createInitialState(teams);
+  const updated = makeReady(initial, initial.teams[2].id);
+  assert.equal(viewModel(updated).ready.name, "Gamma");
+  assert.equal(updated.teams.find((team) => team.name === "Alpha").status, "waiting");
 });

@@ -59,6 +59,20 @@ export function completePitch(state) {
   return record({ ...state, teams }, "pitch_completed", current);
 }
 
+export function makeReady(state, teamId) {
+  const target = state.teams.find((team) => team.id === teamId);
+  if (!target || ![STATUS.READY, "waiting"].includes(target.status)) return state;
+  const current = state.teams.find((team) => team.status === STATUS.PITCHING);
+  const remainingLive = liveTeams(state).filter((team) => team.id !== target.id && team.id !== current?.id);
+  const active = current ? [current, target, ...remainingLive] : [target, ...remainingLive];
+  const rest = state.teams.filter((team) => !active.some((item) => item.id === team.id));
+  const teams = active.map((team, index) => ({
+    ...team,
+    status: team.id === current?.id ? STATUS.PITCHING : index === (current ? 1 : 0) ? STATUS.READY : "waiting",
+  }));
+  return record({ ...state, teams: [...teams, ...rest] }, "team_marked_ready", target);
+}
+
 export function moveToAttention(state, teamId, reason = "skipped") {
   const team = state.teams.find((item) => item.id === teamId);
   if (!team || team.status === STATUS.COMPLETED || team.status === STATUS.PITCHING) return state;
