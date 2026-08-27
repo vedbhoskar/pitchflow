@@ -14,7 +14,10 @@ function configured() {
 export async function readState() {
   if (!configured()) return createInitialState(teams, "PitchFlow Demo Competition");
   const response = await fetch(`${tableUrl()}&select=state` , { headers: headers() });
-  if (!response.ok) throw new Error("Could not read the live state.");
+  if (!response.ok) {
+    console.error("Supabase read failed", response.status, await response.text());
+    throw new Error(`Could not read the live state (Supabase HTTP ${response.status}).`);
+  }
   const rows = await response.json();
   return rows[0]?.state ?? createInitialState(teams);
 }
@@ -26,6 +29,9 @@ export async function saveState(state) {
     headers: { ...headers(), Prefer: "resolution=merge-duplicates,return=representation" },
     body: JSON.stringify({ id: "live", state }),
   });
-  if (!response.ok) throw new Error("Could not save the live state.");
+  if (!response.ok) {
+    console.error("Supabase save failed", response.status, await response.text());
+    throw new Error(`Could not save the live state (Supabase HTTP ${response.status}).`);
+  }
   return (await response.json())[0].state;
 }
