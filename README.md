@@ -16,7 +16,7 @@ The fixed team list lives in `data/teams.json`. Replace it before the event, the
 ## URLs
 
 - `/admin` — single-admin control panel
-- `/display/waiting` — public waiting screen
+- `/waiting` — public waiting screen (`/display/waiting` also works)
 
 ## Supabase setup
 

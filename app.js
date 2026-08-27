@@ -2,7 +2,7 @@ import { completePitch, createInitialState, moveToAttention, reorderLive, restor
 import { demoTeams } from "./data/demo-teams.js";
 
 const app = document.querySelector("#app");
-const isDisplay = location.pathname.includes("/display/waiting");
+const isDisplay = location.pathname.includes("/waiting");
 const isLocalPreview = location.protocol === "file:";
 let state;
 let authenticated = false;
