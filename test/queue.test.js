@@ -1,11 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { completePitch, createInitialState, makeReady, moveToAttention, restoreFromAttention, startPitch, viewModel } from "../src/queue.js";
+import { completePitch, createInitialState, DEFAULT_COMPETITION_NAME, makeReady, moveToAttention, restoreFromAttention, startPitch, viewModel } from "../src/queue.js";
 
 const teams = [{ number: "01", name: "Alpha" }, { number: "02", name: "Beta" }, { number: "03", name: "Gamma" }, { number: "04", name: "Nova" }];
 
 test("the first imported team is ready before the event begins", () => {
   const state = createInitialState(teams);
+  assert.equal(state.competitionName, DEFAULT_COMPETITION_NAME);
   assert.equal(viewModel(state).current, null);
   assert.equal(viewModel(state).ready.name, "Alpha");
 });

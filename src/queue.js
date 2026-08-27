@@ -5,7 +5,9 @@ export const STATUS = {
   ATTENTION: "attention",
 };
 
-export function createInitialState(teams, competitionName = "PitchFlow Competition") {
+export const DEFAULT_COMPETITION_NAME = "JNEC Internal Round of SIH";
+
+export function createInitialState(teams, competitionName = DEFAULT_COMPETITION_NAME) {
   return {
     competitionName,
     announcement: "",
