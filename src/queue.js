@@ -1,0 +1,99 @@
+export const STATUS = {
+  READY: "ready",
+  PITCHING: "pitching",
+  COMPLETED: "completed",
+  ATTENTION: "attention",
+};
+
+export function createInitialState(teams, competitionName = "PitchFlow Competition") {
+  return {
+    competitionName,
+    announcement: "",
+    updatedAt: new Date().toISOString(),
+    teams: teams.map((team, index) => ({
+      id: team.id ?? `${team.number}-${index}`,
+      number: String(team.number),
+      name: team.name.trim(),
+      status: index === 0 ? STATUS.READY : "waiting",
+    })),
+    history: [],
+  };
+}
+
+export function liveTeams(state) {
+  return state.teams.filter((team) => team.status === STATUS.PITCHING || team.status === STATUS.READY || team.status === "waiting");
+}
+
+export function viewModel(state) {
+  const live = liveTeams(state);
+  const current = live.find((team) => team.status === STATUS.PITCHING) ?? null;
+  const ready = current ? live.find((team) => team.status === STATUS.READY) ?? null : live[0] ?? null;
+  const from = current ? live.indexOf(ready) + 1 : 1;
+  return { current, ready, upcoming: live.slice(Math.max(from, 0), Math.max(from, 0) + 2) };
+}
+
+function record(state, action, team) {
+  return {
+    ...state,
+    updatedAt: new Date().toISOString(),
+    history: [{ id: crypto.randomUUID(), action, teamId: team?.id ?? null, at: new Date().toISOString() }, ...state.history],
+  };
+}
+
+export function startPitch(state) {
+  if (state.teams.some((team) => team.status === STATUS.PITCHING)) return state;
+  const next = state.teams.find((team) => team.status === STATUS.READY) ?? state.teams.find((team) => team.status === "waiting");
+  if (!next) return state;
+  const teams = state.teams.map((team) => {
+    if (team.id === next.id) return { ...team, status: STATUS.PITCHING };
+    if (team.status === "waiting") return { ...team, status: STATUS.READY };
+    return team;
+  });
+  return record({ ...state, teams }, "pitch_started", next);
+}
+
+export function completePitch(state) {
+  const current = state.teams.find((team) => team.status === STATUS.PITCHING);
+  if (!current) return state;
+  const teams = state.teams.map((team) => team.id === current.id ? { ...team, status: STATUS.COMPLETED } : team);
+  return record({ ...state, teams }, "pitch_completed", current);
+}
+
+export function moveToAttention(state, teamId, reason = "skipped") {
+  const team = state.teams.find((item) => item.id === teamId);
+  if (!team || team.status === STATUS.COMPLETED || team.status === STATUS.PITCHING) return state;
+  const teams = state.teams.map((item) => item.id === teamId ? { ...item, status: STATUS.ATTENTION, attentionReason: reason } : item);
+  const nextState = record({ ...state, teams }, reason, team);
+  return normalizeQueue(nextState);
+}
+
+export function restoreFromAttention(state, teamId, insertAt = 0) {
+  const team = state.teams.find((item) => item.id === teamId);
+  if (!team || team.status !== STATUS.ATTENTION) return state;
+  const kept = state.teams.filter((item) => item.id !== teamId);
+  const firstWaiting = kept.findIndex((item) => item.status === "waiting");
+  const position = Math.max(firstWaiting < 0 ? kept.length : firstWaiting, 0) + insertAt;
+  kept.splice(position, 0, { ...team, status: "waiting", attentionReason: undefined });
+  return normalizeQueue(record({ ...state, teams: kept }, "restored", team));
+}
+
+export function reorderLive(state, orderedIds) {
+  const live = liveTeams(state);
+  if (orderedIds.length !== live.length || new Set(orderedIds).size !== live.length || !live.every((team) => orderedIds.includes(team.id))) return state;
+  const byId = new Map(state.teams.map((team) => [team.id, team]));
+  const reordered = orderedIds.map((id, index) => ({ ...byId.get(id), status: index === 0 && !live.some((t) => t.status === STATUS.PITCHING) ? STATUS.READY : byId.get(id).status }));
+  const rest = state.teams.filter((team) => !orderedIds.includes(team.id));
+  return normalizeQueue(record({ ...state, teams: [...reordered, ...rest] }, "queue_reordered"));
+}
+
+export function normalizeQueue(state) {
+  const hasCurrent = state.teams.some((team) => team.status === STATUS.PITCHING);
+  let readyAssigned = false;
+  const teams = state.teams.map((team) => {
+    if (team.status === STATUS.COMPLETED || team.status === STATUS.ATTENTION || team.status === STATUS.PITCHING) return team;
+    if (!readyAssigned) { readyAssigned = true; return { ...team, status: STATUS.READY }; }
+    return { ...team, status: "waiting" };
+  });
+  if (!hasCurrent && !readyAssigned) return { ...state, teams };
+  return { ...state, teams };
+}
