@@ -3,13 +3,12 @@ import teams from "../data/teams.json" with { type: "json" };
 
 const tableUrl = () => `${process.env.SUPABASE_URL}/rest/v1/pitchflow_state?id=eq.live`;
 const headers = () => ({
-  apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
-  Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+  apikey: process.env.SUPABASE_SECRET_KEY,
   "content-type": "application/json",
 });
 
 function configured() {
-  return Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+  return Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SECRET_KEY);
 }
 
 export async function readState() {

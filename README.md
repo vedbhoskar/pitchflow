@@ -20,7 +20,7 @@ The fixed team list lives in `data/teams.json`. Replace it before the event, the
 
 ## Supabase setup
 
-Create a Supabase project, run the SQL setup file, then add the five values from `.env.example` to your Vercel project environment variables. `SUPABASE_SERVICE_ROLE_KEY` is server-only and must never be prefixed with `PUBLIC_` or `NEXT_PUBLIC_`.
+Create a Supabase project, run the SQL setup file, then add the five values from `.env.example` to your Vercel project environment variables. `SUPABASE_SECRET_KEY` is server-only and must never be prefixed with `PUBLIC_` or `NEXT_PUBLIC_`.
 
 ## Verify
 
