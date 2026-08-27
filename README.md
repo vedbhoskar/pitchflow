@@ -9,6 +9,8 @@ A minimal live queue controller for one pitching competition: one admin dashboar
 3. In Supabase SQL Editor, run `supabase-setup.sql`.
 4. Start locally with `npm run dev`.
 
+Opening `index.html` directly also works as a local visual preview. It uses demo teams and stores changes only until that tab is refreshed; use `npm run dev` for the API-backed app.
+
 The fixed team list lives in `data/teams.json`. Replace it before the event, then deploy. Team numbers and names are the only public details.
 
 ## URLs

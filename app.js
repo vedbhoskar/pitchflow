@@ -1,7 +1,9 @@
-import { completePitch, moveToAttention, reorderLive, restoreFromAttention, startPitch, viewModel } from "./src/queue.js";
+import { completePitch, createInitialState, moveToAttention, reorderLive, restoreFromAttention, startPitch, viewModel } from "./src/queue.js";
+import { demoTeams } from "./data/demo-teams.js";
 
 const app = document.querySelector("#app");
 const isDisplay = location.pathname.includes("/display/waiting");
+const isLocalPreview = location.protocol === "file:";
 let state;
 let authenticated = false;
 let dragId = null;
@@ -10,6 +12,12 @@ const escape = (value) => String(value ?? "").replace(/[&<>"]/g, (character) => 
 const team = (item) => item ? `<span class="team-number">#${escape(item.number)}</span><span>${escape(item.name)}</span>` : `<span class="empty">—</span>`;
 
 async function load() {
+  if (isLocalPreview) {
+    state ??= createInitialState(demoTeams, "PitchFlow Demo Competition");
+    authenticated = true;
+    render();
+    return;
+  }
   const response = await fetch("/api/state", { cache: "no-store" });
   if (!response.ok) throw new Error("Unable to load the competition.");
   state = await response.json();
@@ -17,6 +25,11 @@ async function load() {
 }
 
 async function save(next) {
+  if (isLocalPreview) {
+    state = next;
+    render();
+    return;
+  }
   const response = await fetch("/api/state", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(next) });
   if (!response.ok) throw new Error((await response.json()).error ?? "Could not save your change.");
   state = await response.json();
