@@ -1,5 +1,5 @@
 import { completePitch, createInitialState, makeReady, moveToAttention, reorderLive, restoreFromAttention, startPitch, viewModel } from "./src/queue.js";
-import { demoTeams } from "./data/demo-teams.js";
+import { localTeams } from "./data/local-teams.js";
 
 const app = document.querySelector("#app");
 const isDisplay = location.pathname.includes("/waiting");
@@ -13,7 +13,7 @@ const team = (item) => item ? `<span class="team-number">#${escape(item.number)}
 
 async function load() {
   if (isLocalPreview) {
-    state ??= createInitialState(demoTeams, "PitchFlow Demo Competition");
+    state ??= createInitialState(localTeams);
     authenticated = true;
     render();
     return;
