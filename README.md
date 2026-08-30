@@ -7,7 +7,7 @@ A minimal live queue controller for one pitching competition: one admin dashboar
 1. Install the Vercel CLI: `npm install -g vercel`
 2. Copy `.env.example` to `.env.local` and fill in the values.
 3. In Supabase SQL Editor, run `supabase-setup.sql`.
-4. Start locally with `npm run dev`.
+4. Start locally with `vercel dev`.
 
 Opening `index.html` directly also works as a local visual preview. It uses the real team list and stores changes only until that tab is refreshed; use `npm run dev` for the API-backed app.
 
