@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { completePitch, createInitialState, DEFAULT_COMPETITION_NAME, makeReady, moveToAttention, restoreFromAttention, startPitch, viewModel } from "../src/queue.js";
+import { completePitch, createInitialState, DEFAULT_COMPETITION_NAME, makeReady, moveToAttention, moveToWaiting, restoreFromAttention, returnPitchToReady, startPitch, viewModel } from "../src/queue.js";
 
 const teams = [{ number: "01", name: "Alpha" }, { number: "02", name: "Beta" }, { number: "03", name: "Gamma" }, { number: "04", name: "Nova" }];
 
@@ -39,4 +39,18 @@ test("an admin can manually make any waiting team the ready team", () => {
   const updated = makeReady(initial, initial.teams[2].id);
   assert.equal(viewModel(updated).ready.name, "Gamma");
   assert.equal(updated.teams.find((team) => team.name === "Alpha").status, "waiting");
+});
+
+test("the coordinator can move a ready team back to waiting", () => {
+  const initial = createInitialState(teams);
+  const updated = moveToWaiting(initial, initial.teams[0].id);
+  assert.equal(updated.teams.find((team) => team.name === "Alpha").status, "waiting");
+  assert.equal(viewModel(updated).ready.name, "Beta");
+});
+
+test("the coordinator can return a pitching team to ready", () => {
+  const pitching = startPitch(createInitialState(teams));
+  const updated = returnPitchToReady(pitching);
+  assert.equal(viewModel(updated).current, null);
+  assert.equal(viewModel(updated).ready.name, "Alpha");
 });

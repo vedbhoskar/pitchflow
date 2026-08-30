@@ -75,6 +75,47 @@ export function makeReady(state, teamId) {
   return record({ ...state, teams: [...teams, ...rest] }, "team_marked_ready", target);
 }
 
+export function moveToWaiting(state, teamId) {
+  const team = state.teams.find((item) => item.id === teamId);
+  if (!team || ![STATUS.READY, STATUS.ATTENTION].includes(team.status)) return state;
+  if (team.status === STATUS.READY) {
+    const active = state.teams.filter((item) => item.id !== teamId && [STATUS.PITCHING, STATUS.READY, "waiting"].includes(item.status));
+    const rest = state.teams.filter((item) => item.id !== teamId && !active.some((activeTeam) => activeTeam.id === item.id));
+    return normalizeQueue(record({ ...state, teams: [...active, { ...team, status: "waiting", attentionReason: undefined }, ...rest] }, "team_moved_to_waiting", team));
+  }
+  const teams = state.teams.map((item) => item.id === teamId ? { ...item, status: "waiting", attentionReason: undefined } : item);
+  return normalizeQueue(record({ ...state, teams }, "team_moved_to_waiting", team));
+}
+
+export function returnPitchToReady(state) {
+  const current = state.teams.find((team) => team.status === STATUS.PITCHING);
+  if (!current) return state;
+  const ready = state.teams.find((team) => team.status === STATUS.READY);
+  const rest = state.teams.filter((team) => team.id !== current.id && team.id !== ready?.id);
+  const teams = [
+    { ...current, status: STATUS.READY },
+    ...(ready ? [{ ...ready, status: "waiting" }] : []),
+    ...rest,
+  ];
+  return record({ ...state, teams }, "pitch_returned_to_ready", current);
+}
+
+export function reopenCompleted(state, teamId) {
+  const team = state.teams.find((item) => item.id === teamId);
+  if (!team || team.status !== STATUS.COMPLETED) return state;
+  const active = state.teams.filter((item) => item.id !== teamId && [STATUS.PITCHING, STATUS.READY, "waiting"].includes(item.status));
+  const rest = state.teams.filter((item) => item.id !== teamId && !active.some((activeTeam) => activeTeam.id === item.id));
+  const current = active.find((item) => item.status === STATUS.PITCHING);
+  const withoutCurrent = active.filter((item) => item.id !== current?.id);
+  const teams = [
+    ...(current ? [current] : []),
+    { ...team, status: STATUS.READY },
+    ...withoutCurrent.map((item) => ({ ...item, status: "waiting" })),
+    ...rest,
+  ];
+  return record({ ...state, teams }, "completed_team_reopened", team);
+}
+
 export function moveToAttention(state, teamId, reason = "skipped") {
   const team = state.teams.find((item) => item.id === teamId);
   if (!team || team.status === STATUS.COMPLETED || team.status === STATUS.PITCHING) return state;
