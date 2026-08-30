@@ -1,4 +1,4 @@
-import { completePitch, createInitialState, makeReady, moveToAttention, moveToWaiting, reopenCompleted, returnPitchToReady, startPitch, viewModel } from "./src/queue.js";
+import { completePitch, createInitialState, makeReady, moveTeamInTray, moveToAttention, moveToWaiting, reopenCompleted, returnPitchToReady, startPitch, viewModel } from "./src/queue.js";
 import { localTeams } from "./data/local-teams.js";
 
 const app = document.querySelector("#app");
@@ -50,12 +50,17 @@ function focusCard(team, label, controls) {
   return `<article class="focus-card"><p>${label}</p>${team ? `${teamName(team)}<div class="focus-actions">${controls}</div>` : `<span class="empty">No team here</span>`}</article>`;
 }
 
-function rosterTile(team, hasPitching) {
-  if (team.status === "waiting") return `<article class="roster-tile">${teamName(team)}<div><button class="quiet" data-ready="${team.id}">Ready</button><button class="hold" data-hold="${team.id}">Hold</button></div></article>`;
-  if (team.status === "ready") return `<article class="roster-tile ready">${teamName(team)}<div>${hasPitching ? `<span class="tag">Ready</span>` : `<button class="primary" data-start="${team.id}">Pitch now</button>`}<button class="quiet" data-waiting="${team.id}">Waiting</button></div></article>`;
-  if (team.status === "pitching") return `<article class="roster-tile pitching">${teamName(team)}<div><span class="tag">Pitching</span></div></article>`;
-  if (team.status === "attention") return `<article class="roster-tile hold-state">${teamName(team)}<div><button class="quiet" data-return="${team.id}">Return</button><button class="primary" data-ready-hold="${team.id}">Ready</button></div></article>`;
-  return `<article class="roster-tile completed">${teamName(team)}<div><span class="tag">Done</span><button class="quiet" data-reopen="${team.id}">Reopen</button></div></article>`;
+function trayControls(team, index, total) {
+  return `<div class="tray-controls"><button class="move" data-back="${team.id}" ${index === 0 ? "disabled" : ""} aria-label="Move ${escape(team.name)} backward in the tray">← Back</button><button class="move" data-forward="${team.id}" ${index === total - 1 ? "disabled" : ""} aria-label="Move ${escape(team.name)} forward in the tray">Forward →</button></div>`;
+}
+
+function rosterTile(team, hasPitching, index, total) {
+  const order = trayControls(team, index, total);
+  if (team.status === "waiting") return `<article class="roster-tile">${teamName(team)}<div><button class="quiet" data-ready="${team.id}">Ready</button><button class="hold" data-hold="${team.id}">Hold</button></div>${order}</article>`;
+  if (team.status === "ready") return `<article class="roster-tile ready">${teamName(team)}<div>${hasPitching ? `<span class="tag">Ready</span>` : `<button class="primary" data-start="${team.id}">Pitch now</button>`}<button class="quiet" data-waiting="${team.id}">Waiting</button></div>${order}</article>`;
+  if (team.status === "pitching") return `<article class="roster-tile pitching">${teamName(team)}<div><span class="tag">Pitching</span></div>${order}</article>`;
+  if (team.status === "attention") return `<article class="roster-tile hold-state">${teamName(team)}<div><button class="quiet" data-return="${team.id}">Return</button><button class="primary" data-ready-hold="${team.id}">Ready</button></div>${order}</article>`;
+  return `<article class="roster-tile completed">${teamName(team)}<div><span class="tag">Done</span><button class="quiet" data-reopen="${team.id}">Reopen</button></div>${order}</article>`;
 }
 
 function admin() {
@@ -72,7 +77,7 @@ function admin() {
       ${focusCard(ready, "READY QUEUE", ready ? `<button class="primary" data-start="${ready.id}" ${pitching ? "disabled" : ""}>Move to pitching</button><button class="quiet" data-waiting="${ready.id}">Move to waiting</button><button class="hold" data-hold="${ready.id}">Hold</button>` : "")}
       <article class="focus-card hold-box"><p>ON HOLD</p><strong>${onHold.length}</strong><span>${onHold.length === 1 ? "team needs attention" : "teams need attention"}</span></article>
     </section>
-    <section class="tray-section"><div class="section-head"><div><p>TEAM TRAY</p><h2>Choose any team</h2></div><span>Ready moves a team into the ready queue. Hold removes it from the live flow.</span></div><div class="team-tray">${state.teams.map((team) => rosterTile(team, Boolean(pitching))).join("")}</div></section>
+    <section class="tray-section"><div class="section-head"><div><p>TEAM TRAY</p><h2>Choose any team</h2></div><span>Use Back / Forward to change the tray order. Ready moves a team into the ready queue.</span></div><div class="team-tray">${state.teams.map((team, index) => rosterTile(team, Boolean(pitching), index, state.teams.length)).join("")}</div></section>
     <section class="lower-row">
       <section class="simple-list"><p>ON HOLD</p>${onHold.length ? onHold.map((team) => `<div>${teamName(team)}<button class="quiet" data-return="${team.id}">Return to waiting</button><button class="primary" data-ready-hold="${team.id}">Ready</button></div>`).join("") : `<span class="empty">No teams on hold.</span>`}</section>
       <section class="simple-list"><p>COMPLETED</p>${completed.length ? completed.map((team) => `<div>${teamName(team)}<button class="quiet" data-reopen="${team.id}">Reopen</button></div>`).join("") : `<span class="empty">No completed teams yet.</span>`}</section>
@@ -103,6 +108,8 @@ function bindAdmin() {
   bind("[data-waiting]", (data) => (current) => moveToWaiting(current, data.waiting));
   bind("[data-return]", (data) => (current) => moveToWaiting(current, data.return));
   bind("[data-reopen]", (data) => (current) => reopenCompleted(current, data.reopen));
+  bind("[data-back]", (data) => (current) => moveTeamInTray(current, data.back, -1));
+  bind("[data-forward]", (data) => (current) => moveTeamInTray(current, data.forward, 1));
   bind("[data-start]", () => startPitch);
   document.querySelector("[data-complete]")?.addEventListener("click", () => update(completePitch));
   document.querySelector("[data-back-pitch]")?.addEventListener("click", () => update(returnPitchToReady));

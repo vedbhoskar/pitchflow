@@ -46,12 +46,22 @@ export function startPitch(state) {
   if (state.teams.some((team) => team.status === STATUS.PITCHING)) return state;
   const next = state.teams.find((team) => team.status === STATUS.READY) ?? state.teams.find((team) => team.status === "waiting");
   if (!next) return state;
+  const following = state.teams.find((team) => team.id !== next.id && team.status === "waiting");
   const teams = state.teams.map((team) => {
     if (team.id === next.id) return { ...team, status: STATUS.PITCHING };
-    if (team.status === "waiting") return { ...team, status: STATUS.READY };
+    if (team.id === following?.id) return { ...team, status: STATUS.READY };
     return team;
   });
   return record({ ...state, teams }, "pitch_started", next);
+}
+
+export function moveTeamInTray(state, teamId, offset) {
+  const from = state.teams.findIndex((team) => team.id === teamId);
+  const to = from + offset;
+  if (from < 0 || to < 0 || to >= state.teams.length) return state;
+  const teams = [...state.teams];
+  [teams[from], teams[to]] = [teams[to], teams[from]];
+  return record({ ...state, teams }, offset < 0 ? "team_moved_backward" : "team_moved_forward", teams[to]);
 }
 
 export function completePitch(state) {

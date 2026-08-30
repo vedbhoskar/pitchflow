@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { completePitch, createInitialState, DEFAULT_COMPETITION_NAME, makeReady, moveToAttention, moveToWaiting, restoreFromAttention, returnPitchToReady, startPitch, viewModel } from "../src/queue.js";
+import { completePitch, createInitialState, DEFAULT_COMPETITION_NAME, makeReady, moveTeamInTray, moveToAttention, moveToWaiting, restoreFromAttention, returnPitchToReady, startPitch, viewModel } from "../src/queue.js";
 
 const teams = [{ number: "01", name: "Alpha" }, { number: "02", name: "Beta" }, { number: "03", name: "Gamma" }, { number: "04", name: "Nova" }];
 
@@ -17,6 +17,16 @@ test("starting a pitch assigns current, ready, and two upcoming teams", () => {
   assert.equal(view.current.name, "Alpha");
   assert.equal(view.ready.name, "Beta");
   assert.deepEqual(view.upcoming.map((team) => team.name), ["Gamma", "Nova"]);
+  assert.equal(state.teams.filter((team) => team.status === "ready").length, 1);
+});
+
+test("a team can be moved backward or forward in the tray without changing its status", () => {
+  const initial = createInitialState(teams);
+  const movedBack = moveTeamInTray(initial, initial.teams[2].id, -1);
+  assert.deepEqual(movedBack.teams.map((team) => team.name), ["Alpha", "Gamma", "Beta", "Nova"]);
+  assert.equal(movedBack.teams[1].status, "waiting");
+  const movedForward = moveTeamInTray(movedBack, movedBack.teams[1].id, 1);
+  assert.deepEqual(movedForward.teams.map((team) => team.name), ["Alpha", "Beta", "Gamma", "Nova"]);
 });
 
 test("completing a pitch records the team and leaves the next one ready", () => {

@@ -1,0 +1,28 @@
+.roster-tile {
+  min-height: 122px;
+}
+
+.tray-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.move {
+  border: 0;
+  background: transparent;
+  padding: 2px 0;
+  color: var(--muted);
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.move:hover {
+  color: var(--blue);
+}
+
+.move + .move {
+  margin-left: auto;
+}
