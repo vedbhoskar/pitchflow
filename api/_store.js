@@ -1,7 +1,7 @@
 import { createInitialState } from "../src/queue.js";
 import teams from "../data/teams.json" with { type: "json" };
 
-const ROSTER_VERSION = "sih-2026-day-2";
+const ROSTER_VERSION = "sih-2026-day-3";
 const tableUrl = () => `${process.env.SUPABASE_URL}/rest/v1/pitchflow_state?id=eq.live`;
 const headers = () => ({
   apikey: process.env.SUPABASE_SECRET_KEY,
